@@ -7,9 +7,15 @@ public class PlayerMotor : MonoBehaviour
     [SerializeField]
     private Camera cam;
 
+    [SerializeField]
+    private float cameraRotationLimit = 85f;
+
     private Vector3 velocity = Vector3.zero;
     private Vector3 rotation = Vector3.zero;
-    private Vector3 cameraRotation = Vector3.zero;
+    private Vector3 thrusterForce = Vector3.zero;
+
+    private float cameraRotation = 0f;
+    private float currentCameraRotation = 0f;
 
 
     private Rigidbody rb;
@@ -34,9 +40,14 @@ public class PlayerMotor : MonoBehaviour
         this.rotation = pRotation;
     }
 
-    internal void RotateCamera(Vector3 pCameraRotation)
+    internal void RotateCamera(float pCameraRotation)
     {
         this.cameraRotation = pCameraRotation;
+    }
+
+    internal void ApplyThruster(Vector3 pThusterForce)
+    {
+        this.thrusterForce = pThusterForce;
     }
 
     private void PerformMovement()
@@ -45,17 +56,23 @@ public class PlayerMotor : MonoBehaviour
         {
             this.rb.MovePosition(this.rb.position + this.velocity * Time.deltaTime);
         }
+        if(this.thrusterForce != Vector3.zero)
+        {
+            this.rb.AddForce(this.thrusterForce * Time.fixedDeltaTime, ForceMode.Acceleration);
+        }
     }
     private void PerformRotation()
     {
         if (this.rotation != Vector3.zero)
         {
             this.rb.MoveRotation(this.rb.rotation * Quaternion.Euler(this.rotation));
-            Debug.Log("Trying to turn arround...");
         }
         if(this.cam != null)
         {
-            cam.transform.Rotate(this.cameraRotation * -1);
+            this.currentCameraRotation -= this.cameraRotation;
+            this.currentCameraRotation = Mathf.Clamp(this.currentCameraRotation, (this.cameraRotationLimit * -1), this.cameraRotationLimit);
+
+            this.cam.transform.localEulerAngles = new Vector3(this.currentCameraRotation, 0f, 0f);
         }
     }
 }
